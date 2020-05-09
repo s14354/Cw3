@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Cw3.DAL;
+using Cw3.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -41,6 +43,29 @@ namespace Cw3
             {
                 app.UseHsts();
             }
+
+            app.Use(async (context, next) =>
+            {
+                if (!context.Request.Headers.ContainsKey("Index"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Brak indeksu");
+                    return;
+                }
+
+                string index = context.Request.Headers["Index"].ToString();
+                //check in db
+                MockDbService dbService = new MockDbService();
+                if (dbService.CheckIndex(index))
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Brak indeksu");
+                    return;
+                }
+                await next();
+            });
+
+            app.UseMiddleware<LoggingMiddleware>();
 
             app.UseHttpsRedirection();
             app.UseMvc();

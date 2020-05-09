@@ -225,5 +225,30 @@ namespace Cw3.DAL
                 return null;
             }
         }
+
+        public bool CheckIndex(String index)
+        {
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select IndexNumber from Student where IndexNumber = @index";
+                com.Parameters.AddWithValue("index", index);
+                con.Open();
+                var dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var en = new Enrollment();
+                    en.IdEnrollment = (int)dr["IdEnrollment"];
+                    en.Semester = (int)dr["Semester"];
+                    en.IdStudy = (int)dr["IdStudy"];
+                    if (String.IsNullOrEmpty(dr["IndexNumber"].ToString())){
+                        return false;
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
     }
 }

@@ -62,7 +62,7 @@ namespace Cw3.Controllers
             }
             else
             {
-                en = _dbService.Promote(String study, int semester);
+                en = _dbService.Promote(study, semester);
                 return new ObjectResult(en) { StatusCode = StatusCodes.Status201Created };
             }
 

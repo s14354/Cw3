@@ -14,5 +14,6 @@ namespace Cw3.DAL
         Enrollment SetFirstEnrollment(Study st, Student stu);
         Enrollment GetEnrollment(string name, int semester);
         Enrollment Promote(string study, int semester);
+        bool CheckIndex(string index);
     }
 }
