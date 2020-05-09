@@ -8,6 +8,11 @@ namespace Cw3.DAL
 {
     public interface IDbService
     {
-        IEnumerable<Student> GetStudents();
+        IEnumerable<Student> GetStudents(String orderBy);
+        Student GetStudent(int id);
+        Study GetStudyByName(string name);
+        Enrollment SetFirstEnrollment(Study st, Student stu);
+        Enrollment GetEnrollment(string name, int semester);
+        Enrollment Promote(string study, int semester);
     }
 }

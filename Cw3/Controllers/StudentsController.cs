@@ -21,24 +21,16 @@ namespace Cw3.Controllers
             _dbService = dbService;
         }
 
-        [HttpGet]
+        [HttpGet("{orderBy}")]
         public IActionResult GetStudents(string orderBy)
         {
-                return Ok(_dbService.GetStudents());
+            return Ok(_dbService.GetStudents(orderBy));
         }
 
         [HttpGet("{id}")]
         public IActionResult GetStudent(int id)
         {
-            if(id == 1)
-            {
-                return Ok("Tobi");
-            } else if(id == 2)
-            {
-                return Ok("asdads");
-            }
-
-            return NotFound("Ne ma");
+            return Ok(_dbService.GetStudent(id));
         }
 
         [HttpPost]
