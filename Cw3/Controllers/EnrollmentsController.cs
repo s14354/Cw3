@@ -8,6 +8,9 @@ using Cw3.DAL;
 using Cw3.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Cw3.Controllers
 {
@@ -23,6 +26,7 @@ namespace Cw3.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "employee")]
         public IActionResult Enroll(Student student)
         {
             if(String.IsNullOrEmpty(student.IndexNumber) || String.IsNullOrEmpty(student.FirstName) || String.IsNullOrEmpty(student.LastName) || String.IsNullOrEmpty(student.BirthDate) || String.IsNullOrEmpty(student.Studies))
@@ -50,6 +54,7 @@ namespace Cw3.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "employee")]
         [Route("promotions")]
         public IActionResult Promote(String study, int semester)
         {

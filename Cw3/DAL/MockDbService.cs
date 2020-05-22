@@ -1,10 +1,14 @@
 ﻿using Cw3.Models;
+using Cw3.DTO;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.Text;
 
 namespace Cw3.DAL
 {
@@ -250,5 +254,93 @@ namespace Cw3.DAL
                 return false;
             }
         }
+
+        public LoginResponseDTO GetRole(LoginRequestDTO request)
+        {
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                //hash
+                request.Haslo = Hash(request.Haslo, GetSalt(request.Login));
+
+                com.CommandText = "select IndexNumber, LastName, Role from Student where IndexNumber = @index and Password = @password";
+                com.Parameters.AddWithValue("index", request.Login);
+                com.Parameters.AddWithValue("password", request.Haslo);
+                con.Open();
+                var dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var response = new LoginResponseDTO();
+                    response.id = dr["IndexNumber"].ToString();
+                    response.name = dr["LastName"].ToString();
+                    response.role = dr["Role"].ToString();
+                    return response;
+                }
+                return null;
+            }
+        }
+
+        public LoginResponseDTO GetRole(string refToken)
+        {
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select IndexNumber, LastName, Role from Student where RefToken = @refToken";
+                com.Parameters.AddWithValue("RefToken", refToken);
+                con.Open();
+                var dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var response = new LoginResponseDTO();
+                    response.id = dr["IndexNumber"].ToString();
+                    response.name = dr["LastName"].ToString();
+                    response.role = dr["Role"].ToString();
+                    return response;
+                }
+                return null;
+            }
+        }
+
+        //public static string Salt()
+        //{
+        //    byte[] randomBytes = new byte[128 / 8];
+        //    using(var generator = RandomNumberGenerator.Create())
+        //    {
+        //        generator.GetBytes(randomBytes);
+        //        return Convert.ToBase64String(randomBytes);
+        //    }
+        //}
+
+        private string GetSalt(string index)
+        {
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select Salt from Student where IndexNumber = @index";
+                com.Parameters.AddWithValue("index", index);
+                con.Open();
+                var dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    return dr["IndexNumber"].ToString();
+                }
+                return null;
+            }
+        }
+
+        public static string Hash(string value, string salt)
+        {
+            var valueBytes = KeyDerivation.Pbkdf2(
+                password: value,
+                salt: Encoding.UTF8.GetBytes(salt),
+                prf: KeyDerivationPrf.HMACSHA512,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8);
+            return Convert.ToBase64String(valueBytes);
+        }
+
     }
 }

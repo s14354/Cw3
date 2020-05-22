@@ -1,4 +1,5 @@
 ﻿using Cw3.Models;
+using Cw3.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +16,7 @@ namespace Cw3.DAL
         Enrollment GetEnrollment(string name, int semester);
         Enrollment Promote(string study, int semester);
         bool CheckIndex(string index);
+        LoginResponseDTO GetRole(LoginRequestDTO request);
+        LoginResponseDTO GetRole(string refToken);
     }
 }
