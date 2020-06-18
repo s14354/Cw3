@@ -36,7 +36,13 @@ namespace Cw3.Controllers
         [HttpGet("{orderBy}")]
         public IActionResult GetStudents(string orderBy)
         {
-            return Ok(_dbService.GetStudents(orderBy));
+            return Ok(_dbService.GetStudents());
+        }
+
+        [HttpPost("{id}")]
+        public IActionResult UpdateStudent(int id, string fname)
+        {
+            return Ok(_dbService.UpdateStudent(fname,id.ToString()));
         }
 
         [HttpGet("{id}")]
@@ -61,7 +67,11 @@ namespace Cw3.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteStudent(int id)
         {
-            return Ok("Usuwanie zakończone");
+            var done = _dbService.DeleteStudent(id.ToString());
+            if(done)
+                return Ok("Usuwanie zakończone");
+            else
+                return BadRequest();
         }
 
         [HttpPost]

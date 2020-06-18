@@ -27,21 +27,15 @@ namespace Cw3.Controllers
 
         [HttpPost]
         [Authorize(Roles = "employee")]
-        public IActionResult Enroll(Student student)
+        public IActionResult Enroll(Student student, int study)
         {
-            if(String.IsNullOrEmpty(student.IndexNumber) || String.IsNullOrEmpty(student.FirstName) || String.IsNullOrEmpty(student.LastName) || String.IsNullOrEmpty(student.BirthDate) || String.IsNullOrEmpty(student.Studies))
+
+            if (String.IsNullOrEmpty(student.IndexNumber) || String.IsNullOrEmpty(student.FirstName) || String.IsNullOrEmpty(student.LastName) || String.IsNullOrEmpty(student.BirthDate.ToString()))
             {
                 return BadRequest();
             }
 
-            Study st = _dbService.GetStudyByName(student.Studies);
-
-            if (st == null)
-            {
-                return BadRequest();
-            }
-
-            Enrollment en = _dbService.SetFirstEnrollment(st, student);
+            Enrollment en = _dbService.SetFirstEnrollment(study, student);
 
             if (en != null)
             {
@@ -67,7 +61,7 @@ namespace Cw3.Controllers
             }
             else
             {
-                en = _dbService.Promote(study, semester);
+                _dbService.Promote(study, semester);
                 return new ObjectResult(en) { StatusCode = StatusCodes.Status201Created };
             }
 

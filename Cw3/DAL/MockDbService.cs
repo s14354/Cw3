@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cw3.DAL
 {
@@ -26,29 +27,40 @@ namespace Cw3.DAL
             //};
         }
 
-        public IEnumerable<Student> GetStudents(String orderBy)
+        public IEnumerable<Student> GetStudents()
         {
-            List<Student> students = new List<Student>();
-            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
-            using (var com = new SqlCommand())
-            {
-                com.Connection = con;
-                com.CommandText = "select * from student s left join enrollment e on e.IdEnrollment = s.IdEnrollment left join studies t on t.IdStudy = e.IdStudy order by @orderBy";
-                com.Parameters.AddWithValue("orderBy", orderBy);
-                con.Open();
-                var dr = com.ExecuteReader();
-                while(dr.Read())
-                {
-                    var st = new Student();
-                    st.FirstName = dr["FirstName"].ToString();
-                    st.LastName = dr["LastName"].ToString();
-                    st.BirthDate = dr["BirthDate"].ToString();
-                    st.StudyName = dr["name"].ToString();
-                    st.Semester = (int)dr["Semester"];
-                    students.Add(st);
-                }
-            }
+
+            var db = new s14354Context();
+            var students = db.Student.ToList();
             return students;
+        }
+
+        public bool UpdateStudent(string fname, string index)
+        {
+            var db = new s14354Context();
+
+            var s = new Student
+            {
+                IndexNumber = index,
+                FirstName = fname
+            };
+            db.Attach(s);
+
+            db.Entry(s).Property("FirstName").IsModified = true;
+            db.SaveChanges();
+            return true;
+        }
+
+        public bool DeleteStudent(string index)
+        {
+            var db = new s14354Context();
+            var s = new Student
+            {
+                IndexNumber = index
+            };
+            db.Attach(s);
+            db.Remove(s);
+            return true;
         }
 
         public Student GetStudent(int ID)
@@ -66,16 +78,14 @@ namespace Cw3.DAL
                     var st = new Student();
                     st.FirstName = dr["FirstName"].ToString();
                     st.LastName = dr["LastName"].ToString();
-                    st.BirthDate = dr["BirthDate"].ToString();
-                    st.StudyName = dr["name"].ToString();
-                    st.Semester = (int)dr["Semester"];
+                    st.BirthDate = Convert.ToDateTime(dr["BirthDate"].ToString());
                     return st;
                 }
                 return null;
             }
         }
 
-        public Study GetStudyByName(string name)
+        public Studies GetStudyByName(string name)
         {
             using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
             using (var com = new SqlCommand())
@@ -87,7 +97,7 @@ namespace Cw3.DAL
                 var dr = com.ExecuteReader();
                 while (dr.Read())
                 {
-                    var st = new Study();
+                    var st = new Studies();
                     st.IdStudy = (int)dr["IdStudy"];
                     st.Name = dr["Name"].ToString();
                     return st;
@@ -96,7 +106,7 @@ namespace Cw3.DAL
             }
         }
 
-        public Enrollment GetFirstEnrollment(Study st)
+        public Enrollment GetFirstEnrollment(Studies st)
         {
             using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
             using (var com = new SqlCommand())
@@ -112,75 +122,26 @@ namespace Cw3.DAL
                     en.IdEnrollment = (int)dr["IdEnrollment"];
                     en.Semester = (int)dr["Semester"];
                     en.IdStudy = (int)dr["IdStudy"];
-                    en.StartDate = dr["StartDate"].ToString();
+                    en.StartDate = Convert.ToDateTime(dr["StartDate"].ToString());
                     return en;
                 }
                 return null;
             }
         }
 
-        public Enrollment SetFirstEnrollment(Study st, Student stu)
+        public Enrollment SetFirstEnrollment(int st, Student stu)
         {
-            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
-            using (var com = new SqlCommand())
-            {
-                com.Connection = con;
-                com.CommandText = "select * from Enrollment where IdStudy = @IdStudy and Semester = 1";
-                com.Parameters.AddWithValue("IdStudy", st.IdStudy);
-                con.Open();
-                SqlTransaction tran = con.BeginTransaction();
-                try
-                {
-                    var dr = com.ExecuteReader();
-                    var en = new Enrollment();
-                    while (dr.Read())
-                    {
-                        en.IdEnrollment = (int)dr["IdEnrollment"];
-                        en.Semester = (int)dr["Semester"];
-                        en.IdStudy = (int)dr["IdStudy"];
-                        en.StartDate = dr["StartDate"].ToString();
-                    }
 
-                    //insert enrollment if null
-                    if (en.StartDate == null)
-                    {
-                        com.CommandText = "insert into Enrollment(Semester,IdStudy,StartDate) output inserted.IdEnreollment, inserted.Semester, inserted.IdStudy, inserted.StartDate values(1,@IdStudy,@StartDate)";
-                        com.Parameters.AddWithValue("IdStudy",st.IdStudy);
-                        com.Parameters.AddWithValue("StartDate", DateTime.Now.ToString());
-                        dr = com.ExecuteReader();
-                        while (dr.Read())
-                        {
-                            en.IdEnrollment = (int)dr["IdEnrollment"];
-                            en.Semester = (int)dr["Semester"];
-                            en.IdStudy = (int)dr["IdStudy"];
-                            en.StartDate = dr["StartDate"].ToString();
-                        }
-                    }
+            var db = new s14354Context();
 
-                    //insert student
-                    com.CommandText = "insert into Student(IndexNumber,FirstName,LastName,BirthDate,IdEnrollment) values(@IndexNumber,@FirstName,@LastName,@BirthDate,@IdEnrollment)";
-                    com.Parameters.AddWithValue("IndexNumber", stu.IndexNumber);
-                    com.Parameters.AddWithValue("FirstName", stu.FirstName);
-                    com.Parameters.AddWithValue("LastName", stu.LastName);
-                    com.Parameters.AddWithValue("BirthDate", stu.BirthDate);
-                    com.Parameters.AddWithValue("BirthDate", en.IdEnrollment);
-                    int good = com.ExecuteNonQuery();
+            var en = db.Enrollment.Where(en => en.Semester == 1 && en.IdStudy == st).First();
 
-                    if (good == 1)
-                    {
-                        tran.Commit();
-                        return en;
-                    } else
-                    {
-                        tran.Rollback();
-                        return null;
-                    }
+            stu.IdEnrollment = en.IdEnrollment;
+            db.Attach(stu);
+            db.Entry(stu).State = EntityState.Added;
+            db.SaveChanges();
 
-                }catch (Exception e){
-                    tran.Rollback();
-                }
-                return null;
-            }
+            return en;
         }
 
         public Enrollment GetEnrollment(String name, int sem)
@@ -200,34 +161,23 @@ namespace Cw3.DAL
                     en.IdEnrollment = (int)dr["IdEnrollment"];
                     en.Semester = (int)dr["Semester"];
                     en.IdStudy = (int)dr["IdStudy"];
-                    en.StartDate = dr["StartDate"].ToString();
+                    en.StartDate = Convert.ToDateTime(dr["StartDate"].ToString());
                     return en;
                 }
                 return null;
             }
         }
 
-        public Enrollment Promote(String study, int sem)
+        public void Promote(String study, int sem)
         {
+
+            var db = new s14354Context();
+
+            var students = db.Database.ExecuteSqlRaw("execute spPromote @study,@sem", study, sem);
+
             using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s14354;Integrated Security=True"))
-            using (var com = new SqlCommand("spPromote", con))
-            {
-                com.CommandType = CommandType.StoredProcedure;
-                com.Parameters.Add(new SqlParameter("@study", study));
-                com.Parameters.Add(new SqlParameter("@sem", sem));
-                con.Open();
-                var dr = com.ExecuteReader();
-                while (dr.Read())
-                {
-                    var en = new Enrollment();
-                    en.IdEnrollment = (int)dr["IdEnrollment"];
-                    en.Semester = (int)dr["Semester"];
-                    en.IdStudy = (int)dr["IdStudy"];
-                    en.StartDate = dr["StartDate"].ToString();
-                    return en;
-                }
-                return null;
-            }
+            using (var com = new SqlCommand("spPromote", con));
+
         }
 
         public bool CheckIndex(String index)

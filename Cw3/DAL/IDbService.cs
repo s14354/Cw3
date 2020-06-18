@@ -9,14 +9,16 @@ namespace Cw3.DAL
 {
     public interface IDbService
     {
-        IEnumerable<Student> GetStudents(String orderBy);
+        IEnumerable<Student> GetStudents();
         Student GetStudent(int id);
-        Study GetStudyByName(string name);
-        Enrollment SetFirstEnrollment(Study st, Student stu);
+        Studies GetStudyByName(string name);
+        Enrollment SetFirstEnrollment(int study, Student stu);
         Enrollment GetEnrollment(string name, int semester);
-        Enrollment Promote(string study, int semester);
+        void Promote(string study, int semester);
         bool CheckIndex(string index);
         LoginResponseDTO GetRole(LoginRequestDTO request);
         LoginResponseDTO GetRole(string refToken);
+        bool UpdateStudent(string fname, string index);
+        bool DeleteStudent(string index);
     }
 }
